@@ -3,6 +3,9 @@ using System.Collections.Generic;
 using System.Net;
 using System.Text.RegularExpressions;
 using KoenZomers.pfSense.Api.Entities;
+using System.Threading.Tasks;
+using System.Linq;
+using Newtonsoft.Json.Linq;
 
 namespace KoenZomers.pfSense.Api
 {
@@ -13,7 +16,7 @@ namespace KoenZomers.pfSense.Api
         /// <summary>
         /// Address of the pfSense server this instance will communicate with. I.e. https://192.168.0.1
         /// </summary>
-        public string ServerAddress { get; private set; }
+        public Uri ServerBaseAddress { get; private set; }
 
         /// <summary>
         /// Username used for communicating with pfSense
@@ -25,6 +28,11 @@ namespace KoenZomers.pfSense.Api
         /// </summary>
         public string Password { get; private set; }
 
+        /// <summary>
+        /// Boolean indicating if the current instance already has an authenticated connection to pfSense
+        /// </summary>
+        public bool IsSessionAuthenticated;
+
         #endregion
 
         #region Fields
@@ -33,11 +41,6 @@ namespace KoenZomers.pfSense.Api
         /// Cookie container used to persist cookies throughout the session with the pfSense server
         /// </summary>
         private readonly CookieContainer _cookieContainer;
-
-        /// <summary>
-        /// Boolean indicating if the current instance already has an authenticated connection to pfSense
-        /// </summary>
-        private bool _isSessionAuthenticated;
 
         #endregion
 
@@ -49,9 +52,9 @@ namespace KoenZomers.pfSense.Api
         /// <param name="serverAddress">Address of the pfSense server this instance will communicate with</param>
         /// <param name="username">Username used for communicating with pfSense</param>
         /// <param name="password">Password used for communicating with pfSense</param>
-        public pfSense(string serverAddress, string username, string password)
+        public pfSense(Uri serverAddress, string username, string password)
         {
-            ServerAddress = serverAddress;
+            ServerBaseAddress = serverAddress;
             Username = username;
             Password = password;
 
@@ -65,13 +68,13 @@ namespace KoenZomers.pfSense.Api
         /// <summary>
         /// Authenticates to pfSense
         /// </summary>
-        private void Authenticate()
+        public async Task Authenticate()
         {
             // Verify if we already have authenticated
-            if (_isSessionAuthenticated) return;
+            if (IsSessionAuthenticated) return;
 
             // Create a session on the pfSense webserver
-            var loginPageContents = HttpUtility.GetPageContents(ServerAddress, _cookieContainer);
+            var loginPageContents = await HttpUtility.GetPageContents(ServerBaseAddress, _cookieContainer);
 
             // Use a regular expression to fetch the anti cross site scriping token from the HTML
             var xssToken = Regex.Match(loginPageContents, "<input.+?type=['\"]hidden['\"].+?name=['\"]_+?csrf_magic['\"] value=['\"](?<xsstoken>.*?)['\"].+?/>", RegexOptions.IgnoreCase);
@@ -83,7 +86,7 @@ namespace KoenZomers.pfSense.Api
             }
 
             // Authenticate the session
-            var authenticationResult = HttpUtility.AuthenticateViaUrlEncodedFormMethod(string.Concat(ServerAddress, "/index.php"),
+            var authenticationResult = await HttpUtility.AuthenticateViaUrlEncodedFormMethod(string.Concat(ServerBaseAddress, "/index.php"),
                                                                                        new Dictionary<string, string>
                                                                                        {
                                                                                             {"__csrf_magic", xssToken.Groups["xsstoken"].Value },
@@ -99,7 +102,7 @@ namespace KoenZomers.pfSense.Api
                 throw new ApplicationException("ERROR: Credentials incorrect");
             }
 
-            _isSessionAuthenticated = true;
+            IsSessionAuthenticated = true;
         }
 
         /// <summary>
@@ -147,28 +150,18 @@ namespace KoenZomers.pfSense.Api
         #region Public methods
 
         /// <summary>
-        /// Retrieves the contents of a pfSense page
-        /// </summary>
-        /// <param name="serverRelativeUrl">Server relative url of the page to retrieve</param>
-        /// <returns>Raw page contents as a string</returns>
-        public string GetPageContent(string serverRelativeUrl)
-        {
-            // Authenticate the session, if needed
-            Authenticate();
-
-            // Get the contents of the page
-            var pageContent = HttpUtility.GetPageContents(string.Concat(ServerAddress, serverRelativeUrl), _cookieContainer);
-            return pageContent;
-        }
-
-        /// <summary>
         /// Gets the data use on the pfSense server of this month. Requires the RRD Summary package to be installed on the pfSense server.
         /// </summary>
         /// <returns>DataUse entity with the statistics of this month</returns>
-        public DataUse GetThisMonthsDataUse()
+        public async Task<DataUse> GetThisMonthsDataUse()
         {
+            if (!IsSessionAuthenticated)
+            {
+                throw new Exceptions.SessionNotAuthenticatedException();
+            }
+
             // Get the contents of the RRD Summary page and return the parsed result
-            var pageContent = GetPageContent("/status_rrd_summary.php");
+            var pageContent = await HttpUtility.GetPageContents(new Uri(ServerBaseAddress, "/status_rrd_summary.php"), _cookieContainer);
             return GetThisMonthsDataUse(pageContent);
         }
 
@@ -176,21 +169,47 @@ namespace KoenZomers.pfSense.Api
         /// Gets the data use on the pfSense server of last month. Requires the RRD Summary package to be installed on the pfSense server.
         /// </summary>
         /// <returns>DataUse entity with the statistics of last month</returns>
-        public DataUse GetLastMonthsDataUse()
+        public async Task<DataUse> GetLastMonthsDataUse()
         {
+            if (!IsSessionAuthenticated)
+            {
+                throw new Exceptions.SessionNotAuthenticatedException();
+            }
+
             // Get the contents of the RRD Summary page and return the parsed result
-            var pageContent = GetPageContent("/status_rrd_summary.php");
+            var pageContent = await HttpUtility.GetPageContents(new Uri(ServerBaseAddress, "/status_rrd_summary.php"), _cookieContainer);
             return GetLastMonthsDataUse(pageContent);
+        }
+
+        /// <summary>
+        /// Gets the RAW result of a request towards pfSense so you can parse the result yourself
+        /// </summary>
+        /// <param name="url">Server relative URL of the page to retrieve</param>
+        /// <returns>String containing the page contents</returns>
+        public async Task<string> GetPageContent(string url)
+        {
+            if (!IsSessionAuthenticated)
+            {
+                throw new Exceptions.SessionNotAuthenticatedException();
+            }
+
+            var pageContent = await HttpUtility.GetPageContents(new Uri(ServerBaseAddress, url), _cookieContainer);
+            return pageContent;
         }
 
         /// <summary>
         /// Gets the RRD Summary with the data use on the pfSense server of this and last month. Requires the RRD Summary package to be installed on the pfSense server.
         /// </summary>
         /// <returns>RrdSummary entity with the data use statistics of this and last month</returns>
-        public RrdSummary GetRrdSummary()
+        public async Task<RrdSummary> GetRrdSummary()
         {
+            if (!IsSessionAuthenticated)
+            {
+                throw new Exceptions.SessionNotAuthenticatedException();
+            }
+
             // Get the contents of the RRD Summary page
-            var pageContent = GetPageContent("/status_rrd_summary.php");
+            var pageContent = await HttpUtility.GetPageContents(new Uri(ServerBaseAddress, "/status_rrd_summary.php"), _cookieContainer);
 
             // Copy in the parsed data into the entity
             var rrdSummary = new RrdSummary

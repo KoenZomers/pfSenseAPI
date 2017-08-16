@@ -50,7 +50,10 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Entities\DataUse.cs" />
+    <Compile Include="Entities\IfData.cs" />
     <Compile Include="Entities\RrdSummary.cs" />
+    <Compile Include="Enums\DataDirections.cs" />
+    <Compile Include="Exceptions\SessionNotAuthenticatedException.cs" />
     <Compile Include="pfSense.cs" />
     <Compile Include="HttpUtility.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

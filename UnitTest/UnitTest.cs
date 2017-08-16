@@ -1,5 +1,7 @@
 ﻿using System.Configuration;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System;
+using System.Threading.Tasks;
 
 namespace KoenZomers.pfSense.Api.UnitTest
 {
@@ -17,16 +19,28 @@ namespace KoenZomers.pfSense.Api.UnitTest
         [TestInitialize]
         public void TestInitialize()
         {
-            _pfSense = new pfSense(ConfigurationManager.AppSettings["pfSenseBaseAddress"], ConfigurationManager.AppSettings["pfSenseUsername"], ConfigurationManager.AppSettings["pfSensePassword"]);
+            _pfSense = new pfSense(new Uri(ConfigurationManager.AppSettings["pfSenseBaseAddress"]), ConfigurationManager.AppSettings["pfSenseUsername"], ConfigurationManager.AppSettings["pfSensePassword"]);
+        }
+
+        /// <summary>
+        /// Calls some page on pfSense without authenticating first to ensure we get the SessionNotAuthenticatedException
+        /// </summary>
+        /// <returns></returns>
+        [ExpectedException(typeof(Exceptions.SessionNotAuthenticatedException))]
+        [TestMethod]
+        public async Task UnauthenticatedTestMethod()
+        {
+            await _pfSense.GetRrdSummary();
         }
 
         /// <summary>
         /// Gets the raw contents of a specific page
         /// </summary>
         [TestMethod]
-        public void RawGetUrlTestMethod()
+        public async Task RawGetUrlTestMethod()
         {
-            var content = _pfSense.GetPageContent("/status_rrd_summary.php");
+            await _pfSense.Authenticate();
+            var content = await _pfSense.GetPageContent("/status_rrd_summary.php");
 
             Assert.IsFalse(string.IsNullOrEmpty(content));
         }
@@ -35,9 +49,10 @@ namespace KoenZomers.pfSense.Api.UnitTest
         /// Gets this months data use
         /// </summary>
         [TestMethod]
-        public void GetThisMonthsDataUsageTestMethod()
+        public async Task GetThisMonthsDataUsageTestMethod()
         {
-            var dataUsage = _pfSense.GetThisMonthsDataUse();
+            await _pfSense.Authenticate();
+            var dataUsage = await _pfSense.GetThisMonthsDataUse();
 
             Assert.IsTrue(dataUsage.Total > 0);
         }
@@ -46,9 +61,10 @@ namespace KoenZomers.pfSense.Api.UnitTest
         /// Gets last months data use
         /// </summary>
         [TestMethod]
-        public void GetLastMonthsDataUsageTestMethod()
+        public async Task GetLastMonthsDataUsageTestMethod()
         {
-            var dataUsage = _pfSense.GetLastMonthsDataUse();
+            await _pfSense.Authenticate();
+            var dataUsage = await _pfSense.GetLastMonthsDataUse();
 
             Assert.IsTrue(dataUsage.Total > 0);
         }
@@ -57,9 +73,10 @@ namespace KoenZomers.pfSense.Api.UnitTest
         /// Gets the RRD Summary with this and last months data use
         /// </summary>
         [TestMethod]
-        public void GetRrdSummaryTestMethod()
+        public async Task GetRrdSummaryTestMethod()
         {
-            var dataUsage = _pfSense.GetRrdSummary();
+            await _pfSense.Authenticate();
+            var dataUsage = await _pfSense.GetRrdSummary();
 
             Assert.IsNotNull(dataUsage.DataUseLastMonth);
             Assert.IsNotNull(dataUsage.DataUseThisMonth);
