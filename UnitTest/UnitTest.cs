@@ -1,8 +1,7 @@
 ﻿using System.Configuration;
-using KoenZomers.pfSense.Api;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace UnitTest
+namespace KoenZomers.pfSense.Api.UnitTest
 {
     [TestClass]
     public class UnitTest

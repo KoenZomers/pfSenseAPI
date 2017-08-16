@@ -6,9 +6,9 @@
     <ProjectGuid>{5CCBA2E1-501B-429C-8C9B-4368EEB9E9A3}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>UnitTest</RootNamespace>
-    <AssemblyName>UnitTest</AssemblyName>
-    <TargetFrameworkVersion>v4.5.1</TargetFrameworkVersion>
+    <RootNamespace>KoenZomers.pfSense.Api.UnitTest</RootNamespace>
+    <AssemblyName>KoenZomers.pfSense.Api.UnitTest</AssemblyName>
+    <TargetFrameworkVersion>v4.6.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <ProjectTypeGuids>{3AC096D0-A1C2-E12C-1390-A8335801FDAB};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>
@@ -41,6 +41,12 @@
     <SlowCheetah_NuGetImportPath Condition=" '$(SlowCheetah_NuGetImportPath)'=='' ">$([System.IO.Path]::GetFullPath( $(MSBuildProjectDirectory)\Properties\SlowCheetah\SlowCheetah.Transforms.targets ))</SlowCheetah_NuGetImportPath>
     <SlowCheetahTargets Condition=" '$(SlowCheetah_EnableImportFromNuGet)'=='true' and Exists('$(SlowCheetah_NuGetImportPath)') ">$(SlowCheetah_NuGetImportPath)</SlowCheetahTargets>
   </PropertyGroup>
+  <PropertyGroup>
+    <SignAssembly>true</SignAssembly>
+  </PropertyGroup>
+  <PropertyGroup>
+    <AssemblyOriginatorKeyFile>..\Solution Items\KoenZomers.pfSense.Api.snk</AssemblyOriginatorKeyFile>
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Configuration" />
@@ -68,16 +74,12 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <None Include="..\Solution Items\KoenZomers.pfSense.Api.snk">
+      <Link>KoenZomers.pfSense.Api.snk</Link>
+    </None>
+    <None Include="App.sample.config" />
     <None Include="App.config">
       <TransformOnBuild>true</TransformOnBuild>
-    </None>
-    <None Include="App.Debug.config">
-      <DependentUpon>App.config</DependentUpon>
-      <IsTransformFile>True</IsTransformFile>
-    </None>
-    <None Include="App.Release.config">
-      <DependentUpon>App.config</DependentUpon>
-      <IsTransformFile>True</IsTransformFile>
     </None>
     <None Include="packages.config" />
     <None Include="Properties\SlowCheetah\SlowCheetah.Transforms.targets" />
