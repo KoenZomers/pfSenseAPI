@@ -77,4 +77,4 @@ With this API at its current state you can:
 
 ## Feedback
 
-Any kind of feedback is welcome! Feel free to drop me an e-mail at koen@zomers.eu
+Any kind of feedback is welcome! Feel free to drop me an e-mail at koen@zomers.eu or [create a new issue](https://github.com/KoenZomers/pfSenseAPI/issues/new)
