@@ -5,6 +5,11 @@ If you'd like me to add functionality to get specific data from pfSense, just se
 
 ## Version History
 
+1.1.0.0 - September 29, 2021
+
+- Compiled against .NET 5.0 now
+- Fixed GetLastMonthsDataUse and GetThisMonthsDataUse not working anymore
+
 1.0.1.0 - August 16, 2017
 
 - Transformed the framework to become asynchronous for all requests
@@ -13,7 +18,7 @@ If you'd like me to add functionality to get specific data from pfSense, just se
 
 ## System Requirements
 
-This API is built using the Microsoft .NET 4.6.2 framework and is fully asynchronous
+This API is built using the Microsoft .NET 5.0 framework and is fully asynchronous
 
 ## Usage Instructions
 

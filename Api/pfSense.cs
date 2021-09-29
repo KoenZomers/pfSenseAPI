@@ -5,7 +5,6 @@ using System.Text.RegularExpressions;
 using KoenZomers.pfSense.Api.Entities;
 using System.Threading.Tasks;
 using System.Linq;
-using Newtonsoft.Json.Linq;
 
 namespace KoenZomers.pfSense.Api
 {
@@ -113,14 +112,17 @@ namespace KoenZomers.pfSense.Api
         private DataUse GetLastMonthsDataUse(string pageContent)
         {
             // Parse the content using a RegEx
-            var regExMatch = Regex.Match(pageContent, @"Last Month:.*?<td>In</td><td.*?>(?<in>\d+).*?</td>.*?<td>Out</td><td.*?>(?<out>\d+).*?</td>.*?<td>Total</td><td.*?>(?<total>\d+).*</td>", RegexOptions.Singleline);
+            var regExMatch = Regex.Matches(pageContent, @"<td>\d{4}-\d{2}-\d{2} to \d{2}-\d{2}-\d{4}</td>.*?<td>(?<in>[\d\.]+).*?</td>.*?<td>(?<out>[\d\.]+).*?</td>.*?<td>(?<total>[\d\.]+).*?</td>", RegexOptions.Singleline);
 
+            // Ensure we at least have two matches
+            if (regExMatch.Count < 1) return null;
+            var c = System.Globalization.CultureInfo.CurrentCulture;
             // Copy in the parsed data into the entity
             var dataUse = new DataUse
             {
-                In = regExMatch.Groups["in"].Success ? (int?)int.Parse(regExMatch.Groups["in"].Value) : null,
-                Out = regExMatch.Groups["out"].Success ? (int?)int.Parse(regExMatch.Groups["out"].Value) : null,
-                Total = regExMatch.Groups["total"].Success ? (int?)int.Parse(regExMatch.Groups["total"].Value) : null
+                In = regExMatch[1].Groups["in"].Success ? (decimal?)decimal.Parse(regExMatch[1].Groups["in"].Value.Replace(".", System.Globalization.CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator)) : null,
+                Out = regExMatch[1].Groups["out"].Success ? (decimal?)decimal.Parse(regExMatch[1].Groups["out"].Value.Replace(".", System.Globalization.CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator)) : null,
+                Total = regExMatch[1].Groups["total"].Success ? (decimal?)decimal.Parse(regExMatch[1].Groups["total"].Value.Replace(".", System.Globalization.CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator)) : null
             };
             return dataUse;
         }
@@ -133,14 +135,14 @@ namespace KoenZomers.pfSense.Api
         private DataUse GetThisMonthsDataUse(string pageContent)
         {
             // Parse the content using a RegEx
-            var regExMatch = Regex.Match(pageContent, @"This Month.*?<td>In</td><td.*?>(?<in>\d+).*?</td>.*?<td>Out</td><td.*?>(?<out>\d+).*?</td>.*?<td>Total</td><td.*?>(?<total>\d+).*</td>", RegexOptions.Singleline);
+            var regExMatch = Regex.Match(pageContent, @"<td>\d{4}-\d{2}-\d{2} to \d{2}-\d{2}-\d{4}</td>.*?<td>(?<in>[\d\.]+).*?</td>.*?<td>(?<out>[\d\.]+).*?</td>.*?<td>(?<total>[\d\.]+).*?</td>", RegexOptions.Singleline);
 
             // Copy in the parsed data into the entity
             var dataUse = new DataUse
             {
-                In = regExMatch.Groups["in"].Success ? (int?)int.Parse(regExMatch.Groups["in"].Value) : null,
-                Out = regExMatch.Groups["out"].Success ? (int?)int.Parse(regExMatch.Groups["out"].Value) : null,
-                Total = regExMatch.Groups["total"].Success ? (int?)int.Parse(regExMatch.Groups["total"].Value) : null
+                In = regExMatch.Groups["in"].Success ? (decimal?)decimal.Parse(regExMatch.Groups["in"].Value.Replace(".", System.Globalization.CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator)) : null,
+                Out = regExMatch.Groups["out"].Success ? (decimal?)decimal.Parse(regExMatch.Groups["out"].Value.Replace(".", System.Globalization.CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator)) : null,
+                Total = regExMatch.Groups["total"].Success ? (decimal?)decimal.Parse(regExMatch.Groups["total"].Value.Replace(".", System.Globalization.CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator)) : null
             };
             return dataUse;
         }

@@ -6,10 +6,10 @@ using System.Threading.Tasks;
 namespace KoenZomers.pfSense.Api.UnitTest
 {
     [TestClass]
-    public class UnitTest
+    public class AuthenticatedUnitTest
     {
         /// <summary>
-        /// pfSense instance to use in the unit tests to communicate with pfSense
+        /// pfSense instance to use in the unit tests to communicate with pfSense using an authenticated session
         /// </summary>
         private pfSense _pfSense;
 
@@ -17,20 +17,13 @@ namespace KoenZomers.pfSense.Api.UnitTest
         /// Instantiate the pfSense instance to be used in all tests
         /// </summary>
         [TestInitialize]
-        public void TestInitialize()
+        public async Task TestInitialize()
         {
-            _pfSense = new pfSense(new Uri(ConfigurationManager.AppSettings["pfSenseBaseAddress"]), ConfigurationManager.AppSettings["pfSenseUsername"], ConfigurationManager.AppSettings["pfSensePassword"]);
-        }
+            // Ensure the configuration file can be found
+            Assert.IsFalse(ConfigurationManager.AppSettings.Count == 0, "Application configuration file not found");
 
-        /// <summary>
-        /// Calls some page on pfSense without authenticating first to ensure we get the SessionNotAuthenticatedException
-        /// </summary>
-        /// <returns></returns>
-        [ExpectedException(typeof(Exceptions.SessionNotAuthenticatedException))]
-        [TestMethod]
-        public async Task UnauthenticatedTestMethod()
-        {
-            await _pfSense.GetRrdSummary();
+            _pfSense = new pfSense(new Uri(ConfigurationManager.AppSettings["pfSenseBaseAddress"]), ConfigurationManager.AppSettings["pfSenseUsername"], ConfigurationManager.AppSettings["pfSensePassword"]);
+            await _pfSense.Authenticate();
         }
 
         /// <summary>
@@ -39,7 +32,6 @@ namespace KoenZomers.pfSense.Api.UnitTest
         [TestMethod]
         public async Task RawGetUrlTestMethod()
         {
-            await _pfSense.Authenticate();
             var content = await _pfSense.GetPageContent("/status_rrd_summary.php");
 
             Assert.IsFalse(string.IsNullOrEmpty(content));
@@ -51,7 +43,6 @@ namespace KoenZomers.pfSense.Api.UnitTest
         [TestMethod]
         public async Task GetThisMonthsDataUsageTestMethod()
         {
-            await _pfSense.Authenticate();
             var dataUsage = await _pfSense.GetThisMonthsDataUse();
 
             Assert.IsTrue(dataUsage.Total > 0);
@@ -63,7 +54,6 @@ namespace KoenZomers.pfSense.Api.UnitTest
         [TestMethod]
         public async Task GetLastMonthsDataUsageTestMethod()
         {
-            await _pfSense.Authenticate();
             var dataUsage = await _pfSense.GetLastMonthsDataUse();
 
             Assert.IsTrue(dataUsage.Total > 0);
@@ -75,7 +65,6 @@ namespace KoenZomers.pfSense.Api.UnitTest
         [TestMethod]
         public async Task GetRrdSummaryTestMethod()
         {
-            await _pfSense.Authenticate();
             var dataUsage = await _pfSense.GetRrdSummary();
 
             Assert.IsNotNull(dataUsage.DataUseLastMonth);
