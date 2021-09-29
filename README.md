@@ -10,6 +10,7 @@ If you'd like me to add functionality to get specific data from pfSense, just se
 - Compiled against .NET 5.0 now
 - Fixed GetLastMonthsDataUse and GetThisMonthsDataUse not working anymore
 - Added SaveBackupAs and GetBackupContents to retrieve a backup from pfSense
+- Removed dependency on Newtonsoft JSON
 
 1.0.1.0 - August 16, 2017
 
@@ -66,7 +67,14 @@ With this API at its current state you can:
 - Get the RAW data from one of the pages on pfSense so you can parse it yourself
 - Get this months data use
 - Get lasts months data use
+- Download backup of pfSense
+
+## Opening in Visual Studio
+
+1. Git clone the project
+2. Copy the App.config.sample in the UnitTest project to App.config and fill it with the URL, username and password of your pfSense box
+3. Run the Unit Tests to see if it works well
 
 ## Feedback
 
-Any kind of feedback is welcome! Feel free to drop me an e-mail at mail@koenzomers.nl
+Any kind of feedback is welcome! Feel free to drop me an e-mail at koen@zomers.eu
