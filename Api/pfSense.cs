@@ -75,20 +75,20 @@ namespace KoenZomers.pfSense.Api
             // Create a session on the pfSense webserver
             var loginPageContents = await HttpUtility.GetPageContents(ServerBaseAddress, _cookieContainer);
 
-            // Use a regular expression to fetch the anti cross site scriping token from the HTML
-            var xssToken = Regex.Match(loginPageContents, "<input.+?type=['\"]hidden['\"].+?name=['\"]_+?csrf_magic['\"] value=['\"](?<xsstoken>.*?)['\"].+?/>", RegexOptions.IgnoreCase);
+            // Use a regular expression to fetch the anti cross site scriping token from the login page HTML
+            var xssTokenLoginPage = Regex.Match(loginPageContents, "<input.+?type=['\"]hidden['\"].+?name=['\"]_+?csrf_magic['\"] value=['\"](?<xsstoken>.*?)['\"].+?/>", RegexOptions.IgnoreCase);
 
             // Verify that the anti XSS token was found
-            if (!xssToken.Success)
+            if (!xssTokenLoginPage.Success)
             {
-                xssToken = Regex.Match(loginPageContents, "var.*?csrfMagicToken.*?=.*?\"(?<xsstoken>.*?)\"");
-            }
+                xssTokenLoginPage = Regex.Match(loginPageContents, "var.*?csrfMagicToken.*?=.*?\"(?<xsstoken>.*?)\"");
+            }            
 
             // Authenticate the session
             var authenticationResult = await HttpUtility.AuthenticateViaUrlEncodedFormMethod(string.Concat(ServerBaseAddress, "/index.php"),
                                                                                        new Dictionary<string, string>
                                                                                        {
-                                                                                            {"__csrf_magic", xssToken.Groups["xsstoken"].Value },
+                                                                                            {"__csrf_magic", xssTokenLoginPage.Groups["xsstoken"].Value },
                                                                                             { "usernamefld", Username }, 
                                                                                             { "passwordfld", Password }, 
                                                                                             { "login", "Login" }
@@ -220,6 +220,74 @@ namespace KoenZomers.pfSense.Api
                 DataUseLastMonth = GetLastMonthsDataUse(pageContent)
             };
             return rrdSummary;
+        }
+
+        /// <summary>
+        /// Gets the contents of a backup of the pfSense configuration
+        /// </summary>
+        /// <param name="includePackageInformation">Boolean indicating if package information should be included in the backup</param>
+        /// <param name="includeRrdData">Boolean indicating if RRD data should be included in the backup</param>
+        /// <param name="encryptBackup">Boolean indicating if the backup should be encrypted</param>
+        /// <param name="encryptPassword">Password to use for the encrypted backup</param>
+        public async Task<string> GetBackupContents(bool includePackageInformation = true, bool includeRrdData = true, bool encryptBackup = false, string encryptPassword = null)
+        {
+            if(encryptBackup && string.IsNullOrWhiteSpace(encryptPassword))
+            {
+                throw new ArgumentNullException("Password must be provided if encryption needs to be applied", nameof(encryptPassword));
+            }
+
+            if (!IsSessionAuthenticated)
+            {
+                throw new Exceptions.SessionNotAuthenticatedException();
+            }
+
+            // Get the page contents so we can get the CSRF token
+            var pageContent = await HttpUtility.GetPageContents(new Uri(ServerBaseAddress, "/diag_backup.php"), _cookieContainer);
+
+            // Use a regular expression to fetch the anti cross site scriping token from the page HTML
+            var xssToken = Regex.Match(pageContent, "<input.+?type=['\"]hidden['\"].+?name=['\"]_+?csrf_magic['\"] value=['\"](?<xsstoken>.*?)['\"].+?/>", RegexOptions.IgnoreCase);
+
+            // Verify that the anti XSS token was found
+            if (!xssToken.Success)
+            {
+                xssToken = Regex.Match(pageContent, "var.*?csrfMagicToken.*?=.*?\"(?<xsstoken>.*?)\"");
+            }
+
+            var downloadArgs = new Dictionary<string, string>
+                {
+                    {"__csrf_magic", xssToken.Groups["xsstoken"].Value },
+                    { "backuparea", "" },
+                    { "nopackages", includePackageInformation ? "" : "yes" },
+                    { "donotbackuprrd", includeRrdData ? "" : "yes" },
+                    { "encrypt", encryptBackup ? "yes" : "" },
+                    { "encrypt_password", encryptPassword },
+                    { "encrypt_password_confirm", encryptPassword },
+                    { "download", "Download configuration as XML" },
+                    { "restorearea", "" }
+                };
+
+            // Get the contents of the RRD Summary page and return the parsed result
+            var backupContents = HttpUtility.DownloadBackupFile(string.Concat(ServerBaseAddress, "/diag_backup.php"),
+                                                new Dictionary<string, string>(),
+                                                downloadArgs,
+                                                _cookieContainer,
+                                                out string filename);
+            return backupContents;
+        }
+
+        /// <summary>
+        /// Gets the contents of a backup of the pfSense configuration and saves it to the provided location
+        /// </summary>
+        /// <param name="filePath">Full path including filename where to save the backup</param>
+        /// <param name="includePackageInformation">Boolean indicating if package information should be included in the backup</param>
+        /// <param name="includeRrdData">Boolean indicating if RRD data should be included in the backup</param>
+        /// <param name="encryptBackup">Boolean indicating if the backup should be encrypted</param>
+        /// <param name="encryptPassword">Password to use for the encrypted backup</param>
+        public async Task SaveBackupAs(string filePath, bool includePackageInformation = true, bool includeRrdData = true, bool encryptBackup = false, string encryptPassword = null)
+        {
+            var backupContent = await GetBackupContents(includePackageInformation, includeRrdData, encryptBackup, encryptPassword);
+
+            await System.IO.File.WriteAllTextAsync(filePath, backupContent);
         }
 
         #endregion

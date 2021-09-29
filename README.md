@@ -9,6 +9,7 @@ If you'd like me to add functionality to get specific data from pfSense, just se
 
 - Compiled against .NET 5.0 now
 - Fixed GetLastMonthsDataUse and GetThisMonthsDataUse not working anymore
+- Added SaveBackupAs and GetBackupContents to retrieve a backup from pfSense
 
 1.0.1.0 - August 16, 2017
 

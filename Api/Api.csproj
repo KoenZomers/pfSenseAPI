@@ -13,7 +13,10 @@
     <Authors>Koen Zomers</Authors>
     <Description>Small leightweight API proxy class written in .NET 5.0 which allows communication with pfSense routers</Description>
     <PackageProjectUrl>https://github.com/KoenZomers/pfSenseAPI</PackageProjectUrl>
-    <PackageReleaseNotes>- Compiled against .NET 5.0 now</PackageReleaseNotes>
+    <PackageReleaseNotes>- Compiled against .NET 5.0 now
+- Fixed GetLastMonthsDataUse and GetThisMonthsDataUse not working anymore
+- Added SaveBackupAs and GetBackupContents to retrieve a backup from pfSense</PackageReleaseNotes>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
   </PropertyGroup>
 
   <ItemGroup>

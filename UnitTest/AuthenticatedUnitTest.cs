@@ -72,5 +72,16 @@ namespace KoenZomers.pfSense.Api.UnitTest
             Assert.IsTrue(dataUsage.DataUseLastMonth.Total > 0);
             Assert.IsTrue(dataUsage.DataUseThisMonth.Total > 0);
         }
+
+        /// <summary>
+        /// Gets a backup of pfSense
+        /// </summary>
+        [TestMethod]
+        public async Task GetBackupTestMethod()
+        {
+            var backup = await _pfSense.GetBackupContents();            
+
+            Assert.IsNotNull(backup);
+        }
     }
 }
