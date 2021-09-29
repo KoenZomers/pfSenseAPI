@@ -5,7 +5,7 @@ If you'd like me to add functionality to get specific data from pfSense, just se
 
 ## Version History
 
-1.1.0.0 - September 29, 2021
+[1.1.0.0](https://www.nuget.org/packages/KoenZomers.pfSense.Api/1.1.0) - September 29, 2021
 
 - Compiled against .NET 5.0 now
 - Fixed GetLastMonthsDataUse and GetThisMonthsDataUse not working anymore
@@ -52,7 +52,7 @@ Check out the UnitTest project in this solution for full insight in the possibil
 
 ## Available via NuGet
 
-You can also pull this API in as a NuGet package by adding "KoenZomers.pfSense.Api" or running:
+You can also pull this API in as a NuGet package by adding "[KoenZomers.pfSense.Api](https://www.nuget.org/packages/KoenZomers.pfsense.Api)" or running:
 
 Install-Package KoenZomers.pfSense.Api
 
